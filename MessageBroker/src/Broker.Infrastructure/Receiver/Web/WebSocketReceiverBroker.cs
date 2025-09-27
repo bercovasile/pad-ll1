@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Broker.Presentation.Socket.Receiver;
+namespace Broker.Infrastructure.Receiver.Web;
 
 public class WebSocketReceiverBroker : IWebSocketReceiverBroker
 {
@@ -15,7 +15,7 @@ public class WebSocketReceiverBroker : IWebSocketReceiverBroker
 		_provider = provider;
 	}
 
-	public async Task<IMessageReceiver?> AcceptReceiverAsync(HttpContext context, CancellationToken cancellation = default)
+	public async Task<IBrokerReceiver?> AcceptReceiverAsync(HttpContext context, CancellationToken cancellation = default)
 	{
 		if (!context.WebSockets.IsWebSocketRequest)
 			return null;
@@ -29,7 +29,7 @@ public class WebSocketReceiverBroker : IWebSocketReceiverBroker
 
 		var socket = await context.WebSockets.AcceptWebSocketAsync();
 
-		var receiver = _provider.GetRequiredService<IMessageReceiver>();
+		var receiver = _provider.GetRequiredService<IBrokerReceiver>();
 
 		if (receiver is WebSocketMessageReceiver socketReceiver)
 		{

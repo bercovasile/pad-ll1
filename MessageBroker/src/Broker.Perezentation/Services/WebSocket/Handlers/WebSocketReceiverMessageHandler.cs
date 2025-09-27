@@ -4,7 +4,7 @@ using Broker.Application.Features.Topics.Commands.Add;
 using Broker.Context.Messages;
 using MediatR;
 
-namespace Broker.Presentation.Socket.Handlers;
+namespace Broker.Presentation.Socket.WebSocket.Handlers;
 public class WebSocketReceiverMessageHandler 
 {
 	private readonly IWebSocketReceiverBroker _broker;

@@ -9,5 +9,5 @@ namespace Broker.Presentation.Abstractions;
 
 public interface ITcpSocketBroker
 {
-	Task<IMessageReceiver?> AcceptSocketAsync(CancellationToken cancellation = default);
+	Task<IBrokerReceiver?> AcceptSocketAsync(CancellationToken cancellation = default);
 }

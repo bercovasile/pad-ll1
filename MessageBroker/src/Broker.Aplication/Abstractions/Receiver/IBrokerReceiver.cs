@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace Broker.Application.Abstractions.Receiver;
 
-public interface IMessageReceiver
+public interface IBrokerReceiver
 {
 	ITopicContext Context { get; }
 	Task<T?> ReceiveAsync<T>(CancellationToken cancellation) where T : new();

@@ -3,7 +3,7 @@ using Broker.Application.Features.Topics.Commands.Add;
 using Broker.Context.Topics.Requests;
 using MediatR;
 
-namespace Broker.Presentation.Socket.Handlers;
+namespace Broker.Presentation.Socket.WebSocket.Handlers;
 
 public class WebSocketManagementMessageHandler
 {

@@ -4,6 +4,6 @@ namespace Broker.Application.Abstractions.Receiver;
 
 public interface IWebSocketReceiverBroker
 {
-	Task<IMessageReceiver> AcceptReceiverAsync(HttpContext context, CancellationToken cancellation = default);
+	Task<IBrokerReceiver> AcceptReceiverAsync(HttpContext context, CancellationToken cancellation = default);
 }
 

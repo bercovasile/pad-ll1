@@ -5,7 +5,7 @@ namespace Broker.Infrastructure.Receiver;
 public class MessageReceiverPipeline : IMessageReceiverPipeline
 {
 	public async Task RunAsync<T>(
-		IMessageReceiver consumer,
+		IBrokerReceiver consumer,
 		Func<T, Task> onDataReceived,
 		Func<T, Task>? onSuccess = null,
 		Func<T, Task>? onFailure = null,
@@ -42,7 +42,7 @@ public class MessageReceiverPipeline : IMessageReceiverPipeline
 	}
 
 	public async Task RunAndAckAsync<T>(
-			IMessageReceiver consumer,
+			IBrokerReceiver consumer,
 			Func<T, Task<bool>> onDataReceived,
 			Func<T, Task>? onSuccess = null,
 			Func<T, Task>? onFailure = null,

@@ -1,14 +1,13 @@
 ﻿using Broker.Application.Abstractions;
 using Broker.Application.Abstractions.Receiver;
-
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 
-namespace Broker.Presentation.Socket.Receiver;
+namespace Broker.Infrastructure.Receiver.Web;
 
-public class WebSocketMessageReceiver : IMessageReceiver
+public class WebSocketMessageReceiver : IBrokerReceiver
 {
 	private WebSocket? _socket;
 
@@ -35,7 +34,6 @@ public class WebSocketMessageReceiver : IMessageReceiver
 		{
 			result = await _socket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellation);
 
-			// If the client is closing, acknowledge and stop
 			if (result.MessageType == WebSocketMessageType.Close)
 			{
 				if (_socket.State == WebSocketState.CloseReceived)

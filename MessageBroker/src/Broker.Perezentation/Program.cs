@@ -1,6 +1,7 @@
 ﻿using Broker.Presentation.Socket;
 using Broker.Persistence;
 using Broker.Application;
+using MongoDB.Driver;
 
 // Build the app
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,8 @@ builder.Services.AddApplicationServices();
 builder.Services.UseWebSocketReceiverBroker();
 
 builder.Services.UseWebSocketSubscriberBroker();
+
+builder.Services.UseSocketReceiverBroker();
 
 var app = builder.Build();
 
