@@ -31,7 +31,7 @@ app.UseWebSockets();
 // Map the endpoint
 app.MapReceiverSocketBroker("/messages/publisher/{topic}");
 
-app.MapSubscriberSocketBroker("/messages/subscriber/{topic}");
+//app.MapSubscriberSocketBroker("/messages/subscriber/{topic}");
 
 app.MapSocketBrokerManagement("/topics/{topic}");
 

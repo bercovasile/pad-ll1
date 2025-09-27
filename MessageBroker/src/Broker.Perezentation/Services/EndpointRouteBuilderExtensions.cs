@@ -4,18 +4,18 @@ namespace Broker.Presentation.Socket;
 
 public static class EndpointRouteBuilderExtensions
 {
-	public static IEndpointRouteBuilder MapSubscriberSocketBroker(
-		this IEndpointRouteBuilder endpoints,
-		string pattern)
-	{
-		endpoints.Map(pattern, async context =>
-		{
-			var handler = context.RequestServices.GetRequiredService<WebSocketSubscriberMessageHandler>();
-			await handler.HandleAsync(context);
-		});
+	//public static IEndpointRouteBuilder MapSubscriberSocketBroker(
+	//	this IEndpointRouteBuilder endpoints,
+	//	string pattern)
+	//{
+	//	endpoints.Map(pattern, async context =>
+	//	{
+	//		var handler = context.RequestServices.GetRequiredService<WebSocketSubscriberMessageHandler>();
+	//		await handler.HandleAsync(context);
+	//	});
 
-		return endpoints;
-	}
+	//	return endpoints;
+	//}
 
 	public static IEndpointRouteBuilder MapReceiverSocketBroker(
 		this IEndpointRouteBuilder endpoints,
