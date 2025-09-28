@@ -23,6 +23,19 @@ public class MongoBrokerContext : IMongoBrokerContext
 	public string ConnectionId { get; }
 	public bool IsActive => _isActive && !_disposed;
 
+	// Static constructor runs once per AppDomain, avoiding repeated serializer registration.
+	static MongoBrokerContext()
+	{
+		try
+		{
+			BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
+		}
+		catch (BsonSerializationException)
+		{
+			// Serializer already registered — ignore.
+		}
+	}
+
 	public MongoBrokerContext(MongoDbSettings settings, string connectionId, ILogger? logger = null)
 	{
 		ConnectionId = connectionId ?? throw new ArgumentNullException(nameof(connectionId));
@@ -40,8 +53,7 @@ public class MongoBrokerContext : IMongoBrokerContext
 
 		try
 		{
-	
-			var clientSettings = MongoClientSettings.FromConnectionString(settings.ConnectionString);
+			var clientSettings = MongoClientSettings.FromConnectionString(settings.ConnectionString);				
 			clientSettings.ConnectTimeout = TimeSpan.FromSeconds(10);
 			clientSettings.ServerSelectionTimeout = TimeSpan.FromSeconds(10);
 			clientSettings.SocketTimeout = TimeSpan.FromSeconds(30);
@@ -55,19 +67,18 @@ public class MongoBrokerContext : IMongoBrokerContext
 
 			_database = _client.GetDatabase(settings.DatabaseName);
 
-			BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
 
-			if (!BsonClassMap.IsClassMapRegistered(typeof(BaseEntity)))
-			{
-				BsonClassMap.RegisterClassMap<BaseEntity>(cm =>
-				{
-					cm.AutoMap();
-					cm.MapIdProperty(c => c.Id)
-					  .SetSerializer(new GuidSerializer(GuidRepresentation.Standard));
-				});
-			}
+			//if (!BsonClassMap.IsClassMapRegistered(typeof(BaseEntity)))
+			//{
+			//	BsonClassMap.RegisterClassMap<BaseEntity>(cm =>
+			//	{
+			//		cm.AutoMap();
+			//		cm.MapIdProperty(c => c.Id)
+			//		  .SetSerializer(new GuidSerializer(GuidRepresentation.Standard));
+			//	});
+			//}
+
 		
-
 			// Inițializare colecții
 			QueueTopics = _database.GetCollection<QueueTopic>(
 				settings.QueueTopicsCollectionName ?? "QueueTopics");

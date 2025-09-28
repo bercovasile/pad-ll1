@@ -1,6 +1,4 @@
-﻿
-
-using Broker.Application.Abstractions.Receiver;
+﻿using Broker.Application.Abstractions.Receiver;
 using Broker.Infrastructure.Receiver;
 using Broker.Infrastructure.Receiver.Socket;
 using Broker.Infrastructure.Receiver.Web;
@@ -8,6 +6,15 @@ using Broker.Infrastructure.Receiver.Web;
 using Broker.Presentation.Services.Handlers;
 using Broker.Presentation.Servicse.Handlers;
 using Broker.Presentation.Socket.WebSocket.Handlers;
+
+using Broker.Application;
+using Broker.Infrastructure.Jobs;
+using Broker.Infrastructure.Services;
+using Broker.Persistence;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Quartz;
+using Quartz.AspNetCore;
 
 namespace Broker.Presentation.Socket;
 
@@ -41,13 +48,49 @@ public static class ServiceCollectionExtensions
 		return services;
 	}
 
-	public static IServiceCollection UseWebSocketSubscriberBroker(this IServiceCollection services)
+	// Adaugă o metodă centralizată pentru înregistrarea tuturor serviciilor necesare aplicației
+	public static IServiceCollection AddBrokerServices(this IServiceCollection services, IConfiguration configuration)
 	{
-		//services.AddSingleton<IWebSocketSubscriberBroker, WebSocketSubscriberBroker>();
-		//services.AddSingleton<ISubscriptionManager, SubscriptionManager>();
-		//services.AddSingleton<WebSocketSubscriberMessageHandler>();
-		//services.AddSingleton<IBrokerSender, BrokerSender>();
+		// Memory cache
+		services.AddMemoryCache();
+		// Persistence
+		services.AddMongoBroker(configuration);
+		services.AddPostgreSQLBroker(configuration);
+		// Topic providers
+		services.AddTopicProviders();
+		// Application services (MediatR etc.)
+		services.AddApplicationServices();
+		// Receiver brokers
+		services.UseWebSocketReceiverBroker();
+		services.UseSocketReceiverBroker();
+
+		// Broker connection (shared manager for consumers)
+		services.AddSingleton<BrokerConnection>();	
+
+		// Quartz jobs
+		services.AddQuartz(q =>
+		{
+			q.UseMicrosoftDependencyInjectionJobFactory();
+
+			// LogType job
+			var logJobKey = new JobKey("LogTypeMessageDispatcherJob");
+			q.AddJob<LogTypeMessageDispatcherJob>(opts => opts.WithIdentity(logJobKey));
+			q.AddTrigger(opts => opts
+				.ForJob(logJobKey)
+				.WithIdentity("LogTypeMessageDispatcherJob-trigger")
+				.WithSimpleSchedule(x => x.WithIntervalInSeconds(30).RepeatForever()));
+
+			// QueueType job
+			var queueJobKey = new JobKey("QueueTypeMessageDispatcherJob");
+			q.AddJob<QueueTypeMessageDispatcherJob>(opts => opts.WithIdentity(queueJobKey));
+			q.AddTrigger(opts => opts
+				.ForJob(queueJobKey)
+				.WithIdentity("QueueTypeMessageDispatcherJob-trigger")
+				.WithSimpleSchedule(x => x.WithIntervalInSeconds(30).RepeatForever()));
+		});
+		services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
 		return services;
 	}
+
 }
