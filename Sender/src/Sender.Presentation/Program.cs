@@ -1,19 +1,20 @@
 ﻿using System;
-using System.Net.WebSockets;
+using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 class PublisherApp
 {
     static async Task Main(string[] args)
     {
-        string topic = "news";
-        string uri = "ws://localhost:51800/messages/publisher/news";
+        string host = "10.48.48.65";
+        int port = 35000;
 
-        using var ws = new ClientWebSocket();
-        await ws.ConnectAsync(new Uri(uri), CancellationToken.None);
-        Console.WriteLine($"[Publisher] Connected to broker on topic '{topic}'");
+        using var client = new TcpClient();
+        await client.ConnectAsync(host, port);
+        Console.WriteLine($"[Publisher] Connected to broker at {host}:{port}");
+
+        using var stream = client.GetStream();
 
         while (true)
         {
@@ -21,8 +22,8 @@ class PublisherApp
             var message = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(message)) continue;
 
-            var bytes = Encoding.UTF8.GetBytes(message);
-            await ws.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None);
+            var bytes = Encoding.UTF8.GetBytes(message + "\n"); // add delimiter if server expects lines
+            await stream.WriteAsync(bytes, 0, bytes.Length);
 
             Console.WriteLine($"[Publisher] Sent: {message}");
         }
