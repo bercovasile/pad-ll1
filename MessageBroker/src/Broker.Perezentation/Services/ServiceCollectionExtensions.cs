@@ -58,13 +58,12 @@ public static class ServiceCollectionExtensions
 
 		services.AddSingleton<IConsumerManager, ConsumerManager>();
 		services.AddSingleton<IMessageDispatcher, RoundRobinMessageDispatcher>();
-		services.AddSingleton<SocketConsumerMessageHandler>();
-
+		services.AddSingleton<BrokerConnection>();
 		services.AddHostedService(provider =>
 		{
-			var handler = provider.GetRequiredService<SocketConsumerMessageHandler>();
+			var broker = provider.GetRequiredService<BrokerConnection>();
 			var logger = provider.GetRequiredService<ILogger<SocketConsumerServerHostedService>>();
-			return new SocketConsumerServerHostedService(handler, logger, port: 37000);
+			return new SocketConsumerServerHostedService(broker, logger, port: 37000);
 		});
 
 		return services;
