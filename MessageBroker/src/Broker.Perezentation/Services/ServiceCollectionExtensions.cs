@@ -40,8 +40,8 @@ public static class ServiceCollectionExtensions
 		services.AddHostedService(provider =>
 		{
 			var handler = provider.GetRequiredService<SocketReceiverMessageHandler>();
-			var logger = provider.GetRequiredService<ILogger<SocketServerHostedService>>();
-			return new SocketServerHostedService(handler,logger, port: 35000);
+			var logger = provider.GetRequiredService<ILogger<SocketReceiverServerHostedService>>();
+			return new SocketReceiverServerHostedService(handler,logger, port: 35000);
 		});
 
 

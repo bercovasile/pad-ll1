@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 
 namespace Broker.Presentation.Services.Handlers;
 
-public class SocketServerHostedService : BackgroundService
+public class SocketReceiverServerHostedService : BackgroundService
 {
 	private readonly SocketReceiverMessageHandler _handler;
-	private readonly ILogger<SocketServerHostedService> _logger;
+	private readonly ILogger<SocketReceiverServerHostedService> _logger;
 	private readonly Channel<System.Net.Sockets.Socket> _connectionChannel;
 	private readonly ChannelWriter<System.Net.Sockets.Socket> _connectionWriter;
 	private readonly ChannelReader<System.Net.Sockets.Socket> _connectionReader;
@@ -22,9 +22,9 @@ public class SocketServerHostedService : BackgroundService
 	private readonly ConcurrentBag<Task> _workerTasks = new();
 	private readonly SemaphoreSlim _connectionSemaphore;
 
-	public SocketServerHostedService(
+	public SocketReceiverServerHostedService(
 		SocketReceiverMessageHandler handler,
-		ILogger<SocketServerHostedService> logger,
+		ILogger<SocketReceiverServerHostedService> logger,
 		int port = 5000,
 		int maxConcurrentConnections = 100,
 		int maxPendingConnections = 1000)
