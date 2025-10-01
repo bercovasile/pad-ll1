@@ -1,4 +1,6 @@
 ﻿// Broker.Perezentation\Services\Handlers\SocketConsumerServerHostedService.cs
+using Broker.Infrastructure.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
@@ -13,12 +15,12 @@ namespace Broker.Presentation.Services.Handlers;
 
 public class SocketConsumerServerHostedService : BackgroundService
 {
-    private readonly SocketConsumerMessageHandler _handler;
     private readonly ILogger<SocketConsumerServerHostedService> _logger;
     private readonly Channel<System.Net.Sockets.Socket> _connectionChannel;
     private readonly ChannelWriter<System.Net.Sockets.Socket> _connectionWriter;
     private readonly ChannelReader<System.Net.Sockets.Socket> _connectionReader;
-    private readonly int _port;
+	private readonly BrokerConnection _brokerConnection;
+	private readonly int _port;
     private readonly int _maxConcurrentConnections;
     private readonly int _maxPendingConnections;
     private TcpListener? _listener;
@@ -26,13 +28,13 @@ public class SocketConsumerServerHostedService : BackgroundService
     private readonly SemaphoreSlim _connectionSemaphore;
 
     public SocketConsumerServerHostedService(
-        SocketConsumerMessageHandler handler,
+		BrokerConnection brokerConnection,
         ILogger<SocketConsumerServerHostedService> logger,
-        int port = 6000,
+		int port = 6000,
         int maxConcurrentConnections = 100,
-        int maxPendingConnections = 1000)
+        int maxPendingConnections = 1000
+		)
     {
-        _handler = handler;
         _logger = logger;
         _port = port;
         _maxConcurrentConnections = maxConcurrentConnections;
@@ -48,6 +50,7 @@ public class SocketConsumerServerHostedService : BackgroundService
         _connectionChannel = Channel.CreateBounded<System.Net.Sockets.Socket>(options);
         _connectionWriter = _connectionChannel.Writer;
         _connectionReader = _connectionChannel.Reader;
+        _brokerConnection = brokerConnection;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -109,9 +112,10 @@ public class SocketConsumerServerHostedService : BackgroundService
             {
                 _logger.LogDebug("Processing consumer connection from {RemoteEndPoint}", clientSocket.RemoteEndPoint);
                 var topic = await ReceiveTopicAsync(clientSocket, stoppingToken);
-				await _handler.HandleAsync(clientSocket, topic ?? "default" , stoppingToken);
-            }
-            catch (Exception ex)
+				 await _brokerConnection.AcceptSocketConsumerAsync(clientSocket, topic ?? "default", stoppingToken);
+
+			}
+			catch (Exception ex)
             {
                 _logger.LogError(ex, "Error handling consumer socket connection from {RemoteEndPoint}", clientSocket.RemoteEndPoint);
             }
