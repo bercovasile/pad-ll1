@@ -11,8 +11,9 @@ class SubscriberApp
 {
     static async Task Main(string[] args)
     {
-        string host = "10.48.48.65";
-        int port = 37000;
+		string host = "127.0.0.1";
+
+		int port = 37000;
 
         using var client = new TcpClient();
         await client.ConnectAsync(host, port);

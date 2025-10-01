@@ -3,6 +3,7 @@
 // Supports multiple consumers per topic, message delivery, and acknowledgment handling
 // .NET 9, C# 13
 
+using Broker.Application.Abstractions;
 using Broker.Application.Abstractions.Consumer;
 using Broker.Domain.Entites.Consumer;
 using Broker.Domain.Entites.Dispatcher;
@@ -31,8 +32,9 @@ namespace Broker.Infrastructure.Services
         private readonly Subject<MessageAcknowledgment> _ackSubject = new();
         private readonly TimeSpan _ackTimeout = TimeSpan.FromSeconds(10);
         private readonly CancellationTokenSource _cts = new();
+	
 
-        public IObservable<Message> Messages => _messageSubject.AsObservable();
+	   public IObservable<Message> Messages => _messageSubject.AsObservable();
         public IObservable<MessageAcknowledgment> Acknowledgments => _ackSubject.AsObservable();
 
         public void RegisterConsumer(string topic, IMessageConsumer consumer)

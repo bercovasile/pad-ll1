@@ -1,4 +1,5 @@
 ﻿using Broker.Application;
+using Broker.Application.Abstractions;
 using Broker.Application.Abstractions.Consumer;
 using Broker.Application.Abstractions.Dispatcher;
 using Broker.Application.Abstractions.Receiver;
@@ -63,7 +64,8 @@ public static class ServiceCollectionExtensions
 		{
 			var broker = provider.GetRequiredService<BrokerConnection>();
 			var logger = provider.GetRequiredService<ILogger<SocketConsumerServerHostedService>>();
-			return new SocketConsumerServerHostedService(broker, logger, port: 37000);
+			var topicProvider = provider.GetRequiredService<IBaseTopicProvider>();
+			return new SocketConsumerServerHostedService(broker, topicProvider, logger, port: 37000);
 		});
 
 		return services;

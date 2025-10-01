@@ -1,5 +1,8 @@
 ﻿// Broker.Perezentation\Services\Handlers\SocketConsumerServerHostedService.cs
+using Broker.Application.Abstractions;
+using Broker.Context.Response;
 using Broker.Infrastructure.Services;
+using MediatR;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -8,6 +11,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
@@ -26,10 +30,14 @@ public class SocketConsumerServerHostedService : BackgroundService
     private TcpListener? _listener;
     private readonly ConcurrentBag<Task> _workerTasks = new();
     private readonly SemaphoreSlim _connectionSemaphore;
+    private readonly IBaseTopicProvider _baseTopicProvide;
 
-    public SocketConsumerServerHostedService(
+
+
+	public SocketConsumerServerHostedService(
 		BrokerConnection brokerConnection,
-        ILogger<SocketConsumerServerHostedService> logger,
+		IBaseTopicProvider baseTopicProvide,
+		ILogger<SocketConsumerServerHostedService> logger,
 		int port = 6000,
         int maxConcurrentConnections = 100,
         int maxPendingConnections = 1000
@@ -51,7 +59,9 @@ public class SocketConsumerServerHostedService : BackgroundService
         _connectionWriter = _connectionChannel.Writer;
         _connectionReader = _connectionChannel.Reader;
         _brokerConnection = brokerConnection;
-    }
+        _baseTopicProvide = baseTopicProvide;
+
+	}
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -111,27 +121,30 @@ public class SocketConsumerServerHostedService : BackgroundService
             try
             {
                 _logger.LogDebug("Processing consumer connection from {RemoteEndPoint}", clientSocket.RemoteEndPoint);
-                var topic = await ReceiveTopicAsync(clientSocket, stoppingToken);
-				 await _brokerConnection.AcceptSocketConsumerAsync(clientSocket, topic ?? "default", stoppingToken);
+                var topicName = await ReceiveTopicAsync(clientSocket, stoppingToken);
+
+				var topic = await _baseTopicProvide.GetTopicAsync(topicName ?? "default", stoppingToken);
+				//if (topic == null)
+				//	return Response.Fail($"Topic '{topicName}' don't exists.");
+
+				await _brokerConnection.AcceptSocketConsumerAsync(clientSocket, topic.Id.ToString(), stoppingToken);
 
 			}
 			catch (Exception ex)
             {
                 _logger.LogError(ex, "Error handling consumer socket connection from {RemoteEndPoint}", clientSocket.RemoteEndPoint);
-            }
-            finally
-            {
                 try
                 {
-                    clientSocket.Close();
                     _logger.LogDebug("Consumer connection closed for {RemoteEndPoint}", clientSocket.RemoteEndPoint);
+                    clientSocket.Close();
                 }
-                catch (Exception ex)
+                catch (Exception exi)
                 {
-                    _logger.LogWarning(ex, "Error closing consumer socket");
+                    _logger.LogWarning(exi, "Error closing consumer socket");
                 }
                 _connectionSemaphore.Release();
             }
+         
         }
     }
 
