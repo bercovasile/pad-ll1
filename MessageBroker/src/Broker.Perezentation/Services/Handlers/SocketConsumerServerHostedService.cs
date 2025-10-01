@@ -1,11 +1,13 @@
-// Broker.Perezentation\Services\Handlers\SocketConsumerServerHostedService.cs
+﻿// Broker.Perezentation\Services\Handlers\SocketConsumerServerHostedService.cs
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Broker.Presentation.Services.Handlers;
 
@@ -106,7 +108,8 @@ public class SocketConsumerServerHostedService : BackgroundService
             try
             {
                 _logger.LogDebug("Processing consumer connection from {RemoteEndPoint}", clientSocket.RemoteEndPoint);
-                await _handler.HandleAsync(clientSocket, "defaultTopic", stoppingToken);
+                var topic = await ReceiveTopicAsync(clientSocket, stoppingToken);
+				await _handler.HandleAsync(clientSocket, topic ?? "default" , stoppingToken);
             }
             catch (Exception ex)
             {
@@ -128,7 +131,37 @@ public class SocketConsumerServerHostedService : BackgroundService
         }
     }
 
-    public override async Task StopAsync(CancellationToken cancellationToken)
+	public async Task<string?> ReceiveTopicAsync(System.Net.Sockets.Socket socket, CancellationToken cancellation = default)
+	{
+		if (socket == null || !socket.Connected)
+			return null;
+
+		var buffer = new byte[1024];
+		int received = await socket.ReceiveAsync(buffer, SocketFlags.None, cancellation);
+
+		if (received == 0)
+			return null;
+
+		var json = Encoding.UTF8.GetString(buffer, 0, received);
+
+		try
+		{
+			using var doc = JsonDocument.Parse(json);
+			if (doc.RootElement.TryGetProperty("topic", out var topicElement))
+			{
+				return topicElement.ToString(); // Clone pentru a nu fi legat de viața lui JsonDocument
+			}
+		}
+		catch
+		{
+			// dacă JSON e invalid -> null
+		}
+
+		return null;
+	}
+
+
+	public override async Task StopAsync(CancellationToken cancellationToken)
     {
         _listener?.Stop();
         _connectionWriter.TryComplete();

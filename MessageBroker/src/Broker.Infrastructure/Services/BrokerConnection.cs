@@ -1,4 +1,4 @@
-// File: Broker.Infrastructure/Services/BrokerConnection.cs
+﻿// File: Broker.Infrastructure/Services/BrokerConnection.cs
 // Implements broker connection logic for WebSocket and gRPC consumers using Rx.NET
 // Supports multiple consumers per topic, message delivery, and acknowledgment handling
 // .NET 9, C# 13
@@ -106,6 +106,30 @@ namespace Broker.Infrastructure.Services
             return consumer;
         }
 
+		//public async Task<IMessageConsumer?> AcceptSocketConsumerAsync(Socket socket, string topic, CancellationToken cancellation = default)
+		//{
+		//	if (socket == null || !socket.Connected)
+		//		return null;
+
+		//	var consumerId = Guid.NewGuid().ToString();
+		//	var consumer = new SocketMessageConsumer(consumerId, topic, socket);
+		//	RegisterConsumer(topic, consumer);
+
+		//	// Background task to unregister on socket close
+		//	_ = Task.Run(async () =>
+		//	{
+		//		while (socket.Connected && !cancellation.IsCancellationRequested)
+		//		{
+		//			await Task.Delay(500, cancellation).ContinueWith(_ => { });
+		//		}
+		//		UnregisterConsumer(topic, consumer);
+		//		consumer.Dispose();
+		//	}, cancellation);
+
+		//	// Subscribe to ACKs from this consumer
+		//	consumer.Acks.Subscribe(_ackSubject);
+		//	return consumer;
+		//}
 		public async Task<IMessageConsumer?> AcceptSocketConsumerAsync(Socket socket, string topic, CancellationToken cancellation = default)
 		{
 			if (socket == null || !socket.Connected)
@@ -115,21 +139,44 @@ namespace Broker.Infrastructure.Services
 			var consumer = new SocketMessageConsumer(consumerId, topic, socket);
 			RegisterConsumer(topic, consumer);
 
-			// Background task to unregister on socket close
+			socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+
+			// Monitorizare socket fără a închide conexiunea
 			_ = Task.Run(async () =>
 			{
-				while (socket.Connected && !cancellation.IsCancellationRequested)
+				var buffer = new byte[1];
+				try
 				{
-					await Task.Delay(500, cancellation).ContinueWith(_ => { });
+					while (!cancellation.IsCancellationRequested)
+					{
+						int received = 0;
+						try
+						{
+							received = await socket.ReceiveAsync(buffer, SocketFlags.None, cancellation);
+						}
+						catch
+						{
+							break; 
+						}
+
+						if (received == 0)
+							break; 
+					}
 				}
-				UnregisterConsumer(topic, consumer);
-				consumer.Dispose();
+				finally
+				{
+					
+					UnregisterConsumer(topic, consumer);
+					consumer.Dispose(); ///<- comentat pentru a nu forța închiderea socket-ului
+				}
 			}, cancellation);
 
-			// Subscribe to ACKs from this consumer
 			consumer.Acks.Subscribe(_ackSubject);
+
 			return consumer;
 		}
+
+
 
 
 		public async Task<MessageDispatchResult> DispatchMessageAsync(Message message, string topic, CancellationToken cancellation = default)

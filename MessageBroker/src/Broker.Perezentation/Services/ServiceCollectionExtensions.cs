@@ -1,16 +1,20 @@
-﻿using Broker.Application.Abstractions.Receiver;
+﻿using Broker.Application;
+using Broker.Application.Abstractions.Consumer;
+using Broker.Application.Abstractions.Dispatcher;
+using Broker.Application.Abstractions.Receiver;
+using Broker.Infrastructure.Consumer;
+using Broker.Infrastructure.Consumer.Core;
+using Broker.Infrastructure.Consumer.Sockets;
+using Broker.Infrastructure.Dispatcher;
+using Broker.Infrastructure.Jobs;
 using Broker.Infrastructure.Receiver;
 using Broker.Infrastructure.Receiver.Socket;
 using Broker.Infrastructure.Receiver.Web;
-
+using Broker.Infrastructure.Services;
+using Broker.Persistence;
 using Broker.Presentation.Services.Handlers;
 using Broker.Presentation.Servicse.Handlers;
 using Broker.Presentation.Socket.WebSocket.Handlers;
-
-using Broker.Application;
-using Broker.Infrastructure.Jobs;
-using Broker.Infrastructure.Services;
-using Broker.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
@@ -48,6 +52,24 @@ public static class ServiceCollectionExtensions
 		return services;
 	}
 
+	public static IServiceCollection UseSocketConsumerBroker(this IServiceCollection services)
+	{
+		//services.AddSingleton<IMessageConsumer, SocketMessageConsumer>();
+
+		services.AddSingleton<IConsumerManager, ConsumerManager>();
+		services.AddSingleton<IMessageDispatcher, RoundRobinMessageDispatcher>();
+		services.AddSingleton<SocketConsumerMessageHandler>();
+
+		services.AddHostedService(provider =>
+		{
+			var handler = provider.GetRequiredService<SocketConsumerMessageHandler>();
+			var logger = provider.GetRequiredService<ILogger<SocketConsumerServerHostedService>>();
+			return new SocketConsumerServerHostedService(handler, logger, port: 37000);
+		});
+
+		return services;
+	}
+
 	// Adaugă o metodă centralizată pentru înregistrarea tuturor serviciilor necesare aplicației
 	public static IServiceCollection AddBrokerServices(this IServiceCollection services, IConfiguration configuration)
 	{
@@ -63,6 +85,8 @@ public static class ServiceCollectionExtensions
 		// Receiver brokers
 		services.UseWebSocketReceiverBroker();
 		services.UseSocketReceiverBroker();
+
+		services.UseSocketConsumerBroker();
 
 		// Broker connection (shared manager for consumers)
 		services.AddSingleton<BrokerConnection>();	
