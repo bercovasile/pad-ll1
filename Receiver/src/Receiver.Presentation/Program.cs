@@ -1,31 +1,46 @@
-﻿using System;
-using System.Net.WebSockets;
+﻿using System.Net.Sockets;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Text.Json;
+
+public class TopicMessage
+{
+    public string topic { get; set; }
+}
 
 class SubscriberApp
 {
     static async Task Main(string[] args)
     {
-        string topic = "news";
-        string uri = "ws://localhost:51800/messages/subscriber/news";
+        string host = "10.48.48.65";
+        int port = 37000;
 
-        using var ws = new ClientWebSocket();
-        await ws.ConnectAsync(new Uri(uri), CancellationToken.None);
-        Console.WriteLine($"[Subscriber] Connected to broker on topic '{topic}'");
+        using var client = new TcpClient();
+        await client.ConnectAsync(host, port);
+        Console.WriteLine($"[Subscriber] Connected to broker");
 
-        var buffer = new byte[1024 * 4];
+        using var stream = client.GetStream();
+
+        // Create the topic object
+        var topicMessage = new TopicMessage { topic = "test_13" };
+
+        // Serialize to JSON
+        string json = JsonSerializer.Serialize(topicMessage);
+        byte[] topicBytes = Encoding.UTF8.GetBytes(json + "\n"); // newline if server expects line-based
+        await stream.WriteAsync(topicBytes, 0, topicBytes.Length);
+        await stream.FlushAsync();
+        Console.WriteLine($"[Subscriber] Sent topic: {json}");
+
+        var buffer = new byte[4096];
         while (true)
         {
-            var result = await ws.ReceiveAsync(buffer, CancellationToken.None);
-            if (result.MessageType == WebSocketMessageType.Close)
+            int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+            if (bytesRead == 0)
             {
                 Console.WriteLine("[Subscriber] Connection closed by broker.");
                 break;
             }
 
-            string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+            string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
             Console.WriteLine($"[Subscriber] Received: {message}");
         }
     }
