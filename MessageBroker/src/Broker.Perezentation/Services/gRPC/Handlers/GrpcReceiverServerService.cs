@@ -3,6 +3,7 @@ using Broker.Context.Messages;
 using Broker.Context.Response;
 using Broker.Infrastructure.Receiver.grpc;
 using Grpc.Core;
+using Broker.Grpc;
 
 namespace Broker.Presentation.Services.gRPC.Handlers;
 
@@ -25,30 +26,7 @@ public class GrpcReceiverServerService : BrokerReceiver.BrokerReceiverBase
 	{
 		string topic = "default";
 
-		// Extrage topicul din primul mesaj
-		if (await requestStream.MoveNext(context.CancellationToken))
-		{
-			var firstMessage = requestStream.Current;
-			if (!string.IsNullOrWhiteSpace(firstMessage.TopicName))
-			{
-				topic = firstMessage.TopicName;
-			}
-
-			// Creează receiver și procesează primul mesaj
-			var receiver = new GrpcMessageReceiver<MessageRequest, Response>(
-				requestStream,
-				responseStream,
-				topic
-			);
-
-			// Trimite primul mesaj către pipeline
-			await receiver.ProcessMessageAsync(firstMessage, context.CancellationToken);
-
-			// Continuă cu restul mesajelor din stream
-			await foreach (var msg in receiver.ReceiveAsyncEnumerable<MessageRequest>(context.CancellationToken))
-			{
-				await receiver.ProcessMessageAsync(msg, context.CancellationToken);
-			}
-		}
+		// Delegate handling to the message handler which uses the receiver pipeline
+		await _handler.HandleAsync(requestStream, responseStream, topic, context.CancellationToken);
 	}
 }

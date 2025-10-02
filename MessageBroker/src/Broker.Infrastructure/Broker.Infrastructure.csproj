@@ -26,4 +26,8 @@
     <ProjectReference Include="..\Broker.Persistence\Broker.Persistence.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Consumer\Grpc\" />
+  </ItemGroup>
+
 </Project>
