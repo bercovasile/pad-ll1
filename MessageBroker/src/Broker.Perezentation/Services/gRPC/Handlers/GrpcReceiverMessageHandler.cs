@@ -25,7 +25,7 @@ public class GrpcReceiverMessageHandler
 		IServerStreamWriter<Response> responseStream,
 		CancellationToken cancellation = default)
 	{
-		var receiver = new GrpcMessageReceiver<MessageRequest, Response>(requestStream, responseStream);
+		var receiver = new GrpcMessageReceiver<MessageRequest, Response>(requestStream, responseStream, "topic_13");
 
 		await _pipeline.RunAsync<MessageRequest>(
 			receiver,

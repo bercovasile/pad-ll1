@@ -23,4 +23,3 @@ public class GrpcReceiverBroker : IGrpcReceiverBroker
 		return Task.FromResult<IBrokerReceiver?>(dynamicReceiver);
 	}
 }
-

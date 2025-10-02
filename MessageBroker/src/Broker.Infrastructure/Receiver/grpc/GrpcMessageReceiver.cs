@@ -17,13 +17,15 @@ public class GrpcMessageReceiver<TRequest, TResponse> : IBrokerReceiver
 
 	public ITopicContext Context { get; private set; }
 
-	public GrpcMessageReceiver(
-		IAsyncStreamReader<TRequest> requestStream,
-		IServerStreamWriter<TResponse> responseStream)
-	{
-		_requestStream = requestStream;
-		_responseStream = responseStream;
-	}
+    public GrpcMessageReceiver(
+        IAsyncStreamReader<TRequest> requestStream,
+        IServerStreamWriter<TResponse> responseStream,
+        string topic)
+    {
+        _requestStream = requestStream;
+        _responseStream = responseStream;
+        Context = new TopicContext(topic);
+    }
 
 	public async Task<T?> ReceiveAsync<T>(CancellationToken cancellation) where T : new()
 	{
