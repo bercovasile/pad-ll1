@@ -3,7 +3,7 @@
 option csharp_namespace = "Broker.Grpc";
 
 service BrokerReceiver {
-  rpc StreamMessages(stream MessageRequest) returns (stream R);
+  rpc StreamMessages(stream MessageRequest) returns (stream Response);
 }
 
 

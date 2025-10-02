@@ -21,12 +21,12 @@ public class GrpcReceiverServerService : BrokerReceiver.BrokerReceiverBase
 	/// </summary>
 	public override async Task StreamMessages(
 	IAsyncStreamReader<MessageRequest> requestStream,
+
 	IServerStreamWriter<Response> responseStream,
 	ServerCallContext context)
 	{
-		string topic = "default";
 
 		// Delegate handling to the message handler which uses the receiver pipeline
-		await _handler.HandleAsync(requestStream, responseStream, topic, context.CancellationToken);
+		await _handler.HandleAsync(requestStream, responseStream, context.CancellationToken);
 	}
 }

@@ -1,5 +1,6 @@
 ﻿
 using Broker.Application.Abstractions.Receiver;
+using Broker.Domain.Entites.Topics;
 using global::Broker.Application.Abstractions;
 using global::Broker.Application.Abstractions.Receiver;
 using global::Broker.Infrastructure.Core;
@@ -18,12 +19,10 @@ public class GrpcMessageReceiver<TRequest, TResponse> : IBrokerReceiver
 
 	public GrpcMessageReceiver(
 		IAsyncStreamReader<TRequest> requestStream,
-		IServerStreamWriter<TResponse> responseStream,
-		string topic)
+		IServerStreamWriter<TResponse> responseStream)
 	{
 		_requestStream = requestStream;
 		_responseStream = responseStream;
-		Context = new TopicContext(topic);
 	}
 
 	public async Task<T?> ReceiveAsync<T>(CancellationToken cancellation) where T : new()
@@ -33,7 +32,12 @@ public class GrpcMessageReceiver<TRequest, TResponse> : IBrokerReceiver
 			var msg = _requestStream.Current;
 			try
 			{
+				if (msg == null)
+					return default;
+
 				var json = JsonSerializer.Serialize(msg);
+				Context = new TopicContext(json);
+
 				return JsonSerializer.Deserialize<T>(json);
 			}
 			catch (JsonException)

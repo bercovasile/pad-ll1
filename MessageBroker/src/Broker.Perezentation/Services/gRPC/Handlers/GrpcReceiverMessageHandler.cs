@@ -23,10 +23,9 @@ public class GrpcReceiverMessageHandler
 	public async Task HandleAsync(
 		IAsyncStreamReader<MessageRequest> requestStream,
 		IServerStreamWriter<Response> responseStream,
-		string topic,
 		CancellationToken cancellation = default)
 	{
-		var receiver = new GrpcMessageReceiver<MessageRequest, Response>(requestStream, responseStream, topic);
+		var receiver = new GrpcMessageReceiver<MessageRequest, Response>(requestStream, responseStream);
 
 		await _pipeline.RunAsync<MessageRequest>(
 			receiver,
@@ -35,7 +34,7 @@ public class GrpcReceiverMessageHandler
 				Console.WriteLine($"Received: {msg.Key} = {msg.Value}");
 				try
 				{
-					var response = await _sender.Send(new AddMessageCommand(topic, msg), cancellation);
+					var response = await _sender.Send(new AddMessageCommand(msg.TopicName, msg), cancellation);
 
 					// Trimitem ACK înapoi către client
 					await responseStream.WriteAsync(response);

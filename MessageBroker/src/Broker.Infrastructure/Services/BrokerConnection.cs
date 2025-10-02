@@ -108,30 +108,7 @@ namespace Broker.Infrastructure.Services
             return consumer;
         }
 
-		//public async Task<IMessageConsumer?> AcceptSocketConsumerAsync(Socket socket, string topic, CancellationToken cancellation = default)
-		//{
-		//	if (socket == null || !socket.Connected)
-		//		return null;
-
-		//	var consumerId = Guid.NewGuid().ToString();
-		//	var consumer = new SocketMessageConsumer(consumerId, topic, socket);
-		//	RegisterConsumer(topic, consumer);
-
-		//	// Background task to unregister on socket close
-		//	_ = Task.Run(async () =>
-		//	{
-		//		while (socket.Connected && !cancellation.IsCancellationRequested)
-		//		{
-		//			await Task.Delay(500, cancellation).ContinueWith(_ => { });
-		//		}
-		//		UnregisterConsumer(topic, consumer);
-		//		consumer.Dispose();
-		//	}, cancellation);
-
-		//	// Subscribe to ACKs from this consumer
-		//	consumer.Acks.Subscribe(_ackSubject);
-		//	return consumer;
-		//}
+		
 		public async Task<IMessageConsumer?> AcceptSocketConsumerAsync(Socket socket, string topic, CancellationToken cancellation = default)
 		{
 			if (socket == null || !socket.Connected)
