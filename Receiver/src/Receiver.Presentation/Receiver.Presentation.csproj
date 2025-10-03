@@ -17,4 +17,8 @@
     </PackageReference>
   </ItemGroup>
 
+	<ItemGroup>
+		<Protobuf Include="Protos\broker.proto" GrpcServices="Client" />
+	</ItemGroup>
+
 </Project>

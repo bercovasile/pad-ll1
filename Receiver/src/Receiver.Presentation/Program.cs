@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Broker.Grpc;
+using Grpc.Core;
 using Grpc.Net.Client;
 
 class SubscriberApp
