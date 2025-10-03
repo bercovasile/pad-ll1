@@ -1,32 +1,20 @@
-﻿using Broker.Application.Abstractions.Receiver;
-using Broker.Context.Messages;
-using Broker.Context.Response;
-using Broker.Infrastructure.Receiver.grpc;
+﻿using Broker.Grpc;
 using Grpc.Core;
-using Broker.Grpc;
-
-namespace Broker.Presentation.Services.gRPC.Handlers;
 
 public class GrpcReceiverServerService : BrokerReceiver.BrokerReceiverBase
 {
-	private readonly GrpcReceiverMessageHandler _handler;
+    private readonly GrpcReceiverMessageHandler _handler;
 
-	public GrpcReceiverServerService(GrpcReceiverMessageHandler handler)
-	{
-		_handler = handler;
-	}
+    public GrpcReceiverServerService(GrpcReceiverMessageHandler handler)
+    {
+        _handler = handler;
+    }
 
-	/// <summary>
-	/// Bidirectional streaming method
-	/// </summary>
-	public override async Task StreamMessages(
-	IAsyncStreamReader<MessageRequest> requestStream,
-
-	IServerStreamWriter<Response> responseStream,
-	ServerCallContext context)
-	{
-
-		// Delegate handling to the message handler which uses the receiver pipeline
-		await _handler.HandleAsync(requestStream, responseStream, context.CancellationToken);
-	}
+    public override async Task StreamMessages(
+        IAsyncStreamReader<MessageRequest> requestStream,
+        IServerStreamWriter<Response> responseStream,
+        ServerCallContext context)
+    {
+        await _handler.HandleAsync(requestStream, responseStream, context.CancellationToken);
+    }
 }

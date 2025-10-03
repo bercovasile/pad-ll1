@@ -17,7 +17,6 @@ internal class AddMessageCommandHandler(
 	{
 		try
 		{
-
 			var topic = await baseTopicProvide.GetTopicAsync(request.TopicName, cancellationToken);
 			if (topic == null)
 				return Response.Fail($"Topic '{request.TopicName}' don't exists.");
@@ -31,8 +30,6 @@ internal class AddMessageCommandHandler(
 
 			if (id == Guid.Empty)
 				return Response.Fail("Failed to create topic.");
-
-
 
 			return Response.Ok("");
 

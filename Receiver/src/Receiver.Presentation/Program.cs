@@ -1,11 +1,9 @@
-﻿using System;
+﻿using Broker.Grpc;
+using Grpc.Core;
+using Grpc.Net.Client;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-using Broker.Grpc;
-using Grpc.Core;
-using Grpc.Net.Client;
 
 class SubscriberApp
 {
@@ -53,7 +51,7 @@ class SubscriberApp
 
     static async Task RunGrpcSubscriber()
     {
-        using var channel = GrpcChannel.ForAddress("https://localhost:5001");
+        using var channel = GrpcChannel.ForAddress("https://localhost:51800");
         var client = new BrokerReceiver.BrokerReceiverClient(channel);
 
         using var call = client.StreamMessages();

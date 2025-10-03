@@ -1,6 +1,4 @@
-﻿
-
-using Broker.Context.Messages;
+﻿using Broker.Context.Messages;
 using Broker.Context.Response;
 using MediatR;
 

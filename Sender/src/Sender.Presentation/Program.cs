@@ -48,7 +48,7 @@ class PublisherApp
 
     static async Task RunGrpcPublisher()
     {
-        using var channel = GrpcChannel.ForAddress("https://localhost:5001");
+        using var channel = GrpcChannel.ForAddress("http://localhost:37001");
         var client = new BrokerReceiver.BrokerReceiverClient(channel);
         using var call = client.StreamMessages();
 
@@ -79,7 +79,7 @@ class PublisherApp
                 Headers = { { "SentAt", DateTime.UtcNow.ToString("o") } },
                 Context = { { "Client", "GrpcPublisher" } },
                 Priority = 0
-            };
+            };  
 
             await call.RequestStream.WriteAsync(message);
             Console.WriteLine($"[gRPC Publisher] Sent: {message.Topic}:{message.Key}:{message.Value}");

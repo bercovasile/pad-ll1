@@ -1,10 +1,11 @@
-﻿using Broker.Presentation.Socket;
-using Broker.Persistence;
-using Broker.Application;
-using MongoDB.Driver;
-using Quartz.AspNetCore;
-using Quartz;
+﻿using Broker.Application;
 using Broker.Infrastructure.Jobs;
+using Broker.Persistence;
+using Broker.Presentation.Socket;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using MongoDB.Driver;
+using Quartz;
+using Quartz.AspNetCore;
 
 
 // Build the app
@@ -23,12 +24,22 @@ builder.Services.AddApplicationServices();
 //builder.Services.UseWebSocketReceiverBroker();
 //builder.Services.UseSocketReceiverBroker();
 
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenLocalhost(37001, o => o.Protocols = HttpProtocols.Http2);
+});
+
+builder.Services.AddGrpc();
+
+builder.Services.AddSingleton<GrpcReceiverMessageHandler>();
+
 builder.Services.AddBrokerServices(configuration);
 var app = builder.Build();
 
 // Enable WebSockets
 app.UseWebSockets();
 
+app.MapGrpcService<GrpcReceiverServerService>();
 
 // Map the endpoint
 app.MapReceiverSocketBroker("/messages/publisher/{topic}");
