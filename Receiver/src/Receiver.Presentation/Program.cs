@@ -51,7 +51,7 @@ class SubscriberApp
 
     static async Task RunGrpcSubscriber()
     {
-        using var channel = GrpcChannel.ForAddress("https://localhost:51800");
+        using var channel = GrpcChannel.ForAddress("http://localhost:37101");
         var client = new BrokerReceiver.BrokerReceiverClient(channel);
 
         using var call = client.StreamMessages();
@@ -60,7 +60,7 @@ class SubscriberApp
         await call.RequestStream.WriteAsync(new MessageRequest
         {
             Topic = "test_13",
-            Key = "",
+            Key = "1",
             Value = "",
             Headers = { { "SubscribedAt", DateTime.UtcNow.ToString("o") } },
             Context = { { "Client", "GrpcSubscriber" } }
