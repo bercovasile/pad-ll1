@@ -1,10 +1,4 @@
-﻿// File: Broker.Infrastructure/Services/BrokerConnection.cs
-// Implements broker connection logic for WebSocket and gRPC consumers using Rx.NET
-// Supports multiple consumers per topic, message delivery, and acknowledgment handling
-// .NET 9, C# 13
-
-using Broker.Application.Abstractions;
-using Broker.Application.Abstractions.Consumer;
+﻿using Broker.Application.Abstractions.Consumer;
 using Broker.Domain.Entites.Consumer;
 using Broker.Domain.Entites.Dispatcher;
 using Broker.Domain.Entites.Messages;
@@ -13,10 +7,7 @@ using Broker.Infrastructure.Consumer.Sockets;
 using Broker.Infrastructure.Consumer.Web;
 using Grpc.Core;
 using Microsoft.AspNetCore.Http;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Reactive.Linq;
