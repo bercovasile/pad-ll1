@@ -25,35 +25,6 @@ namespace Broker.Infrastructure.Jobs
             _brokerConnection = brokerConnection;
         }
 
-		// public async Task Execute(IJobExecutionContext context)
-		// {
-		//await _mongoBrokerContextFactory.ExecuteAsync(async ctx =>
-		//{
-		//    // Selectează 100 de mesaje log-based netrimise (Offset == null)
-		//    var filter = Builders<Message>.Filter.Eq(m => m.Offset, null);
-		//    var messages = await ctx.Messages.Find(filter).Limit(100).ToListAsync();
-		//    foreach (var message in messages)
-		//    {
-		//        var topicConsumers = _brokerConnection.GetConsumers(message.TopicId.ToString());
-		//        bool delivered = false;
-		//        foreach (var consumer in topicConsumers)
-		//        {
-		//            var resp = await consumer.ConsumeAsync(message, CancellationToken.None);
-		//            if (resp.Success)
-		//            {
-		//                delivered = true;
-		//            }
-		//        }
-		//        if (delivered)
-		//        {
-		//            // Marchează ca trimis (setăm Offset)
-		//            var update = Builders<Message>.Update.Set(m => m.Offset, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-		//            await ctx.Messages.UpdateOneAsync(Builders<Message>.Filter.Eq(m => m.Id, message.Id), update);
-		//        }
-		//    }
-		//});
-
-		// }
 		public async Task Execute(IJobExecutionContext context)
 		{
 			// Creează un nou context pentru job

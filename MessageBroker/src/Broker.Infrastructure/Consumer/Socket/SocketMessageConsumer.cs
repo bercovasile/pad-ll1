@@ -35,7 +35,7 @@ namespace Broker.Infrastructure.Consumer.Sockets
                 var bytes = System.Text.Encoding.UTF8.GetBytes(data);
                 await _socket.SendAsync(bytes, SocketFlags.None, cancellation);
 
-                // Simulate ACK for demo (replace with real ACK logic)
+                
                 _ackSubject.OnNext(new MessageAcknowledgment
                 {
                     MessageId = message.Id,
