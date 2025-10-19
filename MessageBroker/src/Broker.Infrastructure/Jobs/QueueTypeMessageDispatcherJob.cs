@@ -16,11 +16,10 @@ namespace Broker.Infrastructure.Jobs
 		private readonly IMongoBrokerContextFactory _mongoBrokerContextFactory;
 		private readonly BrokerConnection _brokerConnection;
 
-		public QueueTypeMessageDispatcherJob(IMongoBrokerContextFactory mongoBrokerContextFactory, BrokerConnection brokerConnection, IMessageDispatcher messageDispatcher)
+		public QueueTypeMessageDispatcherJob(IMongoBrokerContextFactory mongoBrokerContextFactory, BrokerConnection brokerConnection)
 		{
 			_mongoBrokerContextFactory = mongoBrokerContextFactory;
 			_brokerConnection = brokerConnection;
-			_messageDispatcher = messageDispatcher;
 
 		}
 
