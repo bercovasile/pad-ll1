@@ -1,12 +1,9 @@
 ﻿using Broker.Application;
 using Broker.Application.Abstractions;
 using Broker.Application.Abstractions.Consumer;
-using Broker.Application.Abstractions.Dispatcher;
 using Broker.Application.Abstractions.Receiver;
 using Broker.Infrastructure.Consumer;
-using Broker.Infrastructure.Consumer.Core;
-using Broker.Infrastructure.Consumer.Sockets;
-using Broker.Infrastructure.Dispatcher;
+
 using Broker.Infrastructure.Jobs;
 using Broker.Infrastructure.Receiver;
 using Broker.Infrastructure.Receiver.Socket;
@@ -58,7 +55,6 @@ public static class ServiceCollectionExtensions
 		//services.AddSingleton<IMessageConsumer, SocketMessageConsumer>();
 
 		services.AddSingleton<IConsumerManager, ConsumerManager>();
-		services.AddSingleton<IMessageDispatcher, RoundRobinMessageDispatcher>();
 		services.AddSingleton<BrokerConnection>();
 		services.AddHostedService(provider =>
 		{
@@ -103,7 +99,7 @@ public static class ServiceCollectionExtensions
 			q.AddTrigger(opts => opts
 				.ForJob(logJobKey)
 				.WithIdentity("LogTypeMessageDispatcherJob-trigger")
-				.WithSimpleSchedule(x => x.WithIntervalInSeconds(30).RepeatForever()));
+				.WithSimpleSchedule(x => x.WithIntervalInSeconds(2).RepeatForever()));
 
 			// QueueType job
 			var queueJobKey = new JobKey("QueueTypeMessageDispatcherJob");
@@ -111,7 +107,7 @@ public static class ServiceCollectionExtensions
 			q.AddTrigger(opts => opts
 				.ForJob(queueJobKey)
 				.WithIdentity("QueueTypeMessageDispatcherJob-trigger")
-				.WithSimpleSchedule(x => x.WithIntervalInSeconds(30).RepeatForever()));
+				.WithSimpleSchedule(x => x.WithIntervalInSeconds(2).RepeatForever()));
 		});
 		services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 

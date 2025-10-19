@@ -1,0 +1,23 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "Broker.Infrastructure.Protos.Notifier";
+
+service BrokerConsumerNotifier {
+ rpc Consume(stream GrpcMessage) returns (stream GrpcResponse);
+}
+
+
+message GrpcMessage{
+  string id = 1;
+  string key = 2;
+  string value = 3;
+  map<string, string> headers = 4;
+  int32 priority = 5;
+  map<string, string> context = 6; 
+}
+
+message GrpcResponse {
+  bool success   = 1;
+  string message = 2;   
+  string data	 = 3; 
+}

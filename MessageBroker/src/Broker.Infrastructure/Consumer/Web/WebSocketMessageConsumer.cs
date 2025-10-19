@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.Http;
 using System.Net.WebSockets;
-
 using System.Reactive.Subjects;
 using Broker.Domain.Entites.Messages;
 using Broker.Domain.Entites.Consumer;

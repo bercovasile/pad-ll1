@@ -21,7 +21,6 @@ namespace Broker.Infrastructure.Services
         private readonly ConcurrentDictionary<string, HashSet<IMessageConsumer>> _topicConsumers = new();
         private readonly Subject<Message> _messageSubject = new();
         private readonly Subject<MessageAcknowledgment> _ackSubject = new();
-        private readonly TimeSpan _ackTimeout = TimeSpan.FromSeconds(10);
         private readonly CancellationTokenSource _cts = new();
 	
 
@@ -59,8 +58,6 @@ namespace Broker.Infrastructure.Services
             }
             return Enumerable.Empty<IMessageConsumer>();
         }
-
-        // Accepts a WebSocket consumer and registers it
         public async Task<IMessageConsumer?> AcceptWebSocketConsumerAsync(HttpContext context, string topic, CancellationToken cancellation = default)
         {
             if (!context.WebSockets.IsWebSocketRequest)
@@ -88,10 +85,10 @@ namespace Broker.Infrastructure.Services
         }
 
         // Accepts a gRPC consumer and registers it
-        public async Task<IMessageConsumer> AcceptGrpcConsumerAsync(string topic, IAsyncStreamReader<object> clientStream, IServerStreamWriter<object> serverStream, CancellationToken cancellation = default)
+        public async Task<IMessageConsumer> AcceptGrpcConsumerAsync(string topic, string address , CancellationToken cancellation = default)
         {
             var consumerId = Guid.NewGuid().ToString();
-            var consumer = new GrpcMessageConsumer(consumerId, topic, clientStream, serverStream);
+            var consumer = new GrpcMessageConsumer(consumerId, topic, address);
             RegisterConsumer(topic, consumer);
 
             // Subscribe to ACKs from this consumer
@@ -110,8 +107,6 @@ namespace Broker.Infrastructure.Services
 			RegisterConsumer(topic, consumer);
 
 			socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-
-			// Monitorizare socket fără a închide conexiunea
 			_ = Task.Run(async () =>
 			{
 				var buffer = new byte[1];
@@ -146,51 +141,6 @@ namespace Broker.Infrastructure.Services
 			return consumer;
 		}
 
-
-
-
-		public async Task<MessageDispatchResult> DispatchMessageAsync(Message message, string topic, CancellationToken cancellation = default)
-		{
-			var consumers = GetConsumers(topic).ToList();
-			if (!consumers.Any())
-				return new MessageDispatchResult { Delivered = false, Reason = "No consumers" };
-
-			// Round-robin selection
-			var selected = consumers.First();
-			consumers.Remove(selected);
-			consumers.Add(selected);
-
-			var sendResp = await selected.ConsumeAsync(message, cancellation);
-			if (!sendResp.Success)
-				return new MessageDispatchResult { Delivered = false, Reason = sendResp.Message };
-
-			// Wait for ACK/NACK
-			try
-			{
-				var ackObservable = selected.Acks.Where(a => a.MessageId == message.Id).Timeout(_ackTimeout);
-				var ack = await ackObservable.FirstAsync().ToTask(cancellation);
-				if (ack.Type == AckType.Ack)
-				{
-					return new MessageDispatchResult { Delivered = true };
-				}
-				else
-				{
-					return new MessageDispatchResult { Delivered = false, Reason = ack.Reason ?? "NAK from consumer" };
-				}
-			}
-			catch (TimeoutException)
-			{
-				return new MessageDispatchResult { Delivered = false, Reason = $"ACK timeout after {_ackTimeout.TotalSeconds}s" };
-			}
-			catch (OperationCanceledException)
-			{
-				return new MessageDispatchResult { Delivered = false, Reason = "Dispatch cancelled" };
-			}
-			catch (Exception ex)
-			{
-				return new MessageDispatchResult { Delivered = false, Reason = ex.Message };
-			}
-		}
 
         public void Dispose()
         {

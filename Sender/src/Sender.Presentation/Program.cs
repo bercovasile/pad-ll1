@@ -46,46 +46,106 @@ class PublisherApp
         }
     }
 
-    static async Task RunGrpcPublisher()
-    {
-        using var channel = GrpcChannel.ForAddress("http://localhost:37001");
-        var client = new BrokerReceiver.BrokerReceiverClient(channel);
-        using var call = client.StreamMessages();
+	//static async Task RunGrpcPublisher()
+	//{
+	//    using var channel = GrpcChannel.ForAddress("http://localhost:37001");
+	//    var client = new BrokerReceiver.BrokerReceiverClient(channel);
+	//    using var call = client.StreamMessages();
 
-        Console.WriteLine("[gRPC Publisher] Connected to broker");
+	//    Console.WriteLine("[gRPC Publisher] Connected to broker");
 
-        var readTask = Task.Run(async () =>
-        {
-            await foreach (var response in call.ResponseStream.ReadAllAsync())
-            {
-                Console.WriteLine($"[Broker ACK] success={response.Success}, message={response.Message}, data={response.Data}");
-            }
-        });
+	//    var readTask = Task.Run(async () =>
+	//    {
+	//        await foreach (var response in call.ResponseStream.ReadAllAsync())
+	//        {
+	//            Console.WriteLine($"[Broker ACK] success={response.Success}, message={response.Message}, data={response.Data}");
+	//        }
+	//    });
 
-        while (true)
-        {
-            Console.Write("Enter topic:key:value (e.g., test:1:hello): ");
-            var input = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(input)) continue;
+	//    while (true)
+	//    {
+	//        Console.Write("Enter topic:key:value (e.g., test:1:hello): ");
+	//        var input = Console.ReadLine();
+	//        if (string.IsNullOrWhiteSpace(input)) continue;
 
-            var parts = input.Split(':');
-            if (parts.Length < 3) { Console.WriteLine("Invalid format"); continue; }
+	//        var parts = input.Split(':');
+	//        if (parts.Length < 3) { Console.WriteLine("Invalid format"); continue; }
 
-            var message = new MessageRequest
-            {
-                Topic = parts[0],
-                Key = parts[1],
-                Value = parts[2],
-                Headers = { { "SentAt", DateTime.UtcNow.ToString("o") } },
-                Context = { { "Client", "GrpcPublisher" } },
-                Priority = 0
-            };  
+	//        var message = new MessageRequest
+	//        {
+	//            Topic = parts[0],
+	//            Key = parts[1],
+	//            Value = parts[2],
+	//            Headers = { { "SentAt", DateTime.UtcNow.ToString("o") } },
+	//            Context = { { "Client", "GrpcPublisher" } },
+	//            Priority = 0
+	//        };  
 
-            await call.RequestStream.WriteAsync(message);
-            Console.WriteLine($"[gRPC Publisher] Sent: {message.Topic}:{message.Key}:{message.Value}");
-        }
-    }
-    public static MessageRequest ToGrpcMessage(string topic, string key, string value)
+	//        await call.RequestStream.WriteAsync(message);
+	//        Console.WriteLine($"[gRPC Publisher] Sent: {message.Topic}:{message.Key}:{message.Value}");
+	//    }
+	//}
+	static async Task RunGrpcPublisher()
+	{
+		using var channel = GrpcChannel.ForAddress("http://localhost:37001");
+		var client = new BrokerReceiver.BrokerReceiverClient(channel);
+
+		Console.WriteLine("[gRPC Publisher] Connected to broker");
+
+		while (true)
+		{
+			Console.Write("Enter topic:key:value (e.g., test:1:hello) or 'exit': ");
+			var input = Console.ReadLine();
+			if (string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
+				break;
+
+			if (string.IsNullOrWhiteSpace(input)) continue;
+
+			var parts = input.Split(':');
+			if (parts.Length < 3)
+			{
+				Console.WriteLine("Invalid format");
+				continue;
+			}
+
+			var message = new MessageRequest
+			{
+				Topic = parts[0],
+				Key = parts[1],
+				Value = parts[2],
+				Headers = { { "SentAt", DateTime.UtcNow.ToString("o") } },
+				Context = { { "Client", "GrpcPublisher" } },
+				Priority = 0
+			};
+
+			try
+			{
+				// 🔹 deschidem un stream nou pentru fiecare mesaj
+				using var call = client.StreamMessages();
+
+				// trimitem mesajul
+				await call.RequestStream.WriteAsync(message);
+
+				// închidem fluxul de cereri (important!)
+				await call.RequestStream.CompleteAsync();
+
+				// citim toate răspunsurile (ACK-uri)
+				await foreach (var response in call.ResponseStream.ReadAllAsync())
+				{
+					Console.WriteLine($"[Broker ACK] success={response.Success}, message={response.Message}, data={response.Data}");
+				}
+
+				Console.WriteLine($"[gRPC Publisher] Sent: {message.Topic}:{message.Key}:{message.Value}");
+			}
+			catch (RpcException ex)
+			{
+				Console.WriteLine($"[gRPC Publisher] Stream error: {ex.StatusCode} - {ex.Status.Detail}");
+			}
+		}
+	}
+
+
+	public static MessageRequest ToGrpcMessage(string topic, string key, string value)
     {
         return new MessageRequest
         {

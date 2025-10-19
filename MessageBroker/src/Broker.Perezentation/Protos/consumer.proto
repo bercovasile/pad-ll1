@@ -1,0 +1,19 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "Broker.Presentation.Protos.Consumer";
+
+service BrokerConsumer {
+
+  rpc Subscribe(stream SubscribeRequest) returns (stream Response);
+}
+
+message Response {
+  bool success   = 1;
+  string message = 2;   
+  string data	 = 3; 
+}
+
+message SubscribeRequest{
+  string topic = 1;
+  string address  = 2;
+}

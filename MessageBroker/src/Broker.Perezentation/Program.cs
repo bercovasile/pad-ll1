@@ -1,6 +1,7 @@
 ﻿using Broker.Application;
 using Broker.Infrastructure.Jobs;
 using Broker.Persistence;
+using Broker.Presentation.Services.gRPC.Handlers;
 using Broker.Presentation.Socket;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using MongoDB.Driver;
@@ -40,6 +41,8 @@ var app = builder.Build();
 app.UseWebSockets();
 
 app.MapGrpcService<GrpcReceiverServerService>();
+app.MapGrpcService<GrpcConsumerServerService>();
+
 
 // Map the endpoint
 app.MapReceiverSocketBroker("/messages/publisher/{topic}");

@@ -1,6 +1,6 @@
 ﻿syntax = "proto3";
 
-option csharp_namespace = "Broker.Grpc";
+option csharp_namespace = "Broker.Presentation.Protos.Reciver";
 
 service BrokerReceiver {
   rpc StreamMessages(stream MessageRequest) returns (stream Response);

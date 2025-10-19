@@ -1,5 +1,7 @@
-﻿using Broker.Grpc;
+﻿using Broker.Presentation.Protos.Reciver;
 using Grpc.Core;
+
+namespace Broker.Presentation.Services.gRPC.Handlers;
 
 public class GrpcReceiverServerService : BrokerReceiver.BrokerReceiverBase
 {

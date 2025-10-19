@@ -6,6 +6,8 @@ using Broker.Domain.Entites.Messages;
 using System;
 using System.Net.Sockets;
 using System.Reactive.Subjects;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,8 +21,12 @@ namespace Broker.Infrastructure.Consumer.Sockets
         private readonly Socket _socket;
         private readonly Subject<MessageAcknowledgment> _ackSubject = new();
         private bool _disposed;
-
-        public SocketMessageConsumer(string consumerId, string topic, Socket socket)
+		private JsonSerializerOptions _options = new JsonSerializerOptions
+		{
+			ReferenceHandler = ReferenceHandler.Preserve, // handles cycles
+			WriteIndented = true                          // optional, for readable JSON
+		};
+		public SocketMessageConsumer(string consumerId, string topic, Socket socket)
         {
             ConsumerId = consumerId;
             Topic = topic;
@@ -31,8 +37,8 @@ namespace Broker.Infrastructure.Consumer.Sockets
         {
             try
             {
-                var data = System.Text.Json.JsonSerializer.Serialize(message);
-                var bytes = System.Text.Encoding.UTF8.GetBytes(data);
+				var data = JsonSerializer.Serialize(message, _options);
+				var bytes = System.Text.Encoding.UTF8.GetBytes(data);
                 await _socket.SendAsync(bytes, SocketFlags.None, cancellation);
 
                 

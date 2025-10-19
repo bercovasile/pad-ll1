@@ -1,11 +1,14 @@
 ﻿using Broker.Application.Features.Messages.Commands.Add;
-using Broker.Grpc;
+using Broker.Presentation.Protos.Reciver;
 using Grpc.Core;
 using MediatR;
+
+namespace Broker.Presentation.Services.gRPC.Handlers;
 
 public class GrpcReceiverMessageHandler
 {
     private readonly ISender _sender;
+
 
     public GrpcReceiverMessageHandler(ISender sender)
     {
@@ -27,7 +30,7 @@ public class GrpcReceiverMessageHandler
 				var response = await _sender.Send(
 				new AddMessageCommand(
 					requestStream.Current.Topic,
-					new Broker.Context.Messages.MessageRequest
+					new Context.Messages.MessageRequest
 					{
 						Key = requestStream.Current.Key,
 						Value = requestStream.Current.Value,

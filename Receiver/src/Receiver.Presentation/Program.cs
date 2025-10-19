@@ -1,9 +1,16 @@
-﻿using Broker.Grpc;
+﻿//using Broker.Grpc;
 using Grpc.Core;
 using Grpc.Net.Client;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using Broker.Presentation.Protos.Consumer;
+using Grpc.Core;
+using Grpc.Net.Client;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.Extensions.DependencyInjection;
 
 class SubscriberApp
 {
@@ -14,9 +21,9 @@ class SubscriberApp
 
         if (transport == "grpc")
         {
-            await RunGrpcSubscriber();
-        }
-        else
+			 await RunSubscriberAsServerAsync("test_13");
+		}
+		else
         {
             await RunSocketSubscriber();
         }
@@ -49,41 +56,55 @@ class SubscriberApp
         }
     }
 
-    static async Task RunGrpcSubscriber()
-    {
-        using var channel = GrpcChannel.ForAddress("https://localhost:51800");
-        var client = new BrokerReceiver.BrokerReceiverClient(channel);
+	static async Task RunSubscriberAsServerAsync(string topic)
+	{
+		var builder = WebApplication.CreateBuilder();
+		builder.WebHost.ConfigureKestrel(options =>
+		{
+			options.ListenLocalhost(51800, o => o.Protocols = HttpProtocols.Http2);
+		});
 
-        using var call = client.StreamMessages();
+		builder.Services.AddGrpc();
+		var app = builder.Build();
+		app.MapGrpcService<NotificationReceiverService>();
+		_ = app.RunAsync();
 
-        // Optional: send initial subscription request
-        await call.RequestStream.WriteAsync(new MessageRequest
-        {
-            Topic = "test_13",
-            Key = "",
-            Value = "",
-            Headers = { { "SubscribedAt", DateTime.UtcNow.ToString("o") } },
-            Context = { { "Client", "GrpcSubscriber" } }
-        });
 
-        Console.WriteLine("[gRPC Subscriber] Listening for messages...");
 
-        await foreach (var response in call.ResponseStream.ReadAllAsync())
-        {
-            Console.WriteLine($"[gRPC Subscriber] success={response.Success}, message={response.Message}, data={response.Data}");
-        }
-    }
+		using var channel = GrpcChannel.ForAddress("http://localhost:37101");
+		var client = new BrokerConsumer.BrokerConsumerClient(channel);
 
-    public static MessageRequest ToGrpcMessage(string topic, string key, string value)
-    {
-        return new MessageRequest
-        {
-            Topic = topic,
-            Key = key,
-            Value = value,
-            Headers = { { "SentAt", DateTime.UtcNow.ToString("o") } },
-            Context = { { "Client", "GrpcPublisherApp" } },
-            Priority = 0
-        };
-    }
+		using var call = client.Subscribe();
+
+		string localAddress = "http://localhost:51800";
+
+		await call.RequestStream.WriteAsync(new SubscribeRequest
+		{
+			Topic = topic,
+			Address = localAddress
+		});
+
+		Console.WriteLine($"[Client] Subscribed to topic '{topic}' and listening on {localAddress}");
+
+
+		_ = Task.Run(async () =>
+		{
+			await foreach (var response in call.ResponseStream.ReadAllAsync())
+			{
+				Console.WriteLine($"[Message] success={response.Success}, message={response.Message}, data={response.Data}");
+			}
+		});
+
+
+		await Task.Delay(-1);
+	}
+
+
 }
+
+
+
+
+
+
+
