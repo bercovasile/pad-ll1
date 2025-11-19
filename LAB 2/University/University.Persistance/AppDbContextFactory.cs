@@ -10,7 +10,7 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
 
         // Use your PostgreSQL connection string
-        optionsBuilder.UseNpgsql("Host=localhost;Port=5434;Database=university;Username=superuser;Password=Cascaval2024#;TrustServerCertificate=True;");
+        optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=university;Username=postgres;Password=postgres;TrustServerCertificate=True;");
 
         return new AppDbContext(optionsBuilder.Options);
     }

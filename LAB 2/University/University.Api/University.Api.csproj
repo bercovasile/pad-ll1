@@ -4,6 +4,8 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+	  <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+	  <UserSecretsId>deb8c782-92b4-4b3f-8a76-ae6ccce728f6</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +14,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.11" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+    <PackageReference Include="StackExchange.Redis" Version="2.9.32" />
+    <PackageReference Include="ZiggyCreatures.FusionCache" Version="2.4.0" />
+    <PackageReference Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis" Version="2.4.0" />
+    <PackageReference Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" Version="2.4.0" />
   </ItemGroup>
 
   <ItemGroup>

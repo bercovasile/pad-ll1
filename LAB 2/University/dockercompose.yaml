@@ -1,0 +1,43 @@
+services:
+  api1:
+    build:
+      context: .
+      dockerfile: University.Api/Dockerfile
+    container_name: university_api1
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - university_net
+
+    volumes:
+      - ./appsettings.json:/app/appsettings.json
+
+  api2:
+    build:
+      context: .
+      dockerfile: University.Api/Dockerfile
+    container_name: university_api2
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - university_net
+
+    volumes:
+      - ./appsettings.json:/app/appsettings.json
+
+  haproxy:
+    build:
+      context: ./haproxy
+      dockerfile: Dockerfile
+    container_name: university_haproxy
+    ports:
+      - "8888:8888"
+    depends_on:
+      - api1
+      - api2
+    networks:
+      - university_net
+
+networks:
+  university_net:
+    driver: bridge
