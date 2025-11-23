@@ -1,0 +1,180 @@
+networks:
+  postgres_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
+services:
+  haproxy:
+    build: 'haproxy'
+    ports:
+      - 6432:6432
+      - 6433:5432
+      - 6434:5431
+      - 7000:7000
+    depends_on:
+      - zoo1
+      - pg-master
+      - pg-slave-1
+      - pg-slave-2
+    networks:
+      postgres_net:
+        ipv4_address: 172.18.0.2
+
+  pgbouncer1:
+    image: edoburu/pgbouncer
+    container_name: pgbouncer1
+    restart: always
+    depends_on:
+      - pgpool1
+      - zoo1
+      - pg-master
+      - pg-slave-1
+      - pg-slave-2
+    ports:
+      - 8432:6432
+    environment:
+      DB_USER: "postgres"
+      DB_PASSWORD: "postgres"
+    volumes:
+      - ./pgbouncer/pgbouncer1.ini:/etc/pgbouncer/pgbouncer.ini
+      - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+    networks:
+      postgres_net:
+        ipv4_address: 172.18.0.3
+  pgbouncer2:
+    image: edoburu/pgbouncer
+    container_name: pgbouncer2
+    restart: always
+    depends_on:
+      - pgpool2
+      - zoo1
+      - pg-master
+      - pg-slave-1
+      - pg-slave-2
+    ports:
+      - 7432:6432
+    environment:
+      DB_USER: "postgres"
+      DB_PASSWORD: "postgres"
+    volumes:
+      - ./pgbouncer/pgbouncer2.ini:/etc/pgbouncer/pgbouncer.ini
+      - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+    networks:
+      postgres_net:
+        ipv4_address: 172.18.0.4
+
+  pgpool1:
+    build: 'pgpool'
+    container_name: pgpool1
+    restart: always
+    hostname: pgpool1
+    ports:
+      - 9898:9898   # PCP port (admin)
+    volumes:
+    - '/var/log/pgpool1'
+    depends_on:
+      - zoo1
+      - pg-master
+      - pg-slave-1
+      - pg-slave-2
+    command: ["pgpool", "-n", "-f", "/opt/bitnami/pgpool/etc/pgpool1.conf"]
+    networks:
+      postgres_net:
+        ipv4_address: 172.18.0.5
+  pgpool2:
+    build: 'pgpool'
+    container_name: pgpool2
+    restart: always
+    hostname: pgpool2
+    ports:
+      - 9899:9898   # PCP port (admin)
+    volumes:
+    - '/var/log/pgpool2'
+    depends_on:
+      - zoo1
+      - pg-master
+      - pg-slave-1
+      - pg-slave-2
+    command: ["pgpool", "-n", "-f", "/opt/bitnami/pgpool/etc/pgpool2.conf"]
+    networks:
+      postgres_net:
+        ipv4_address: 172.18.0.6
+
+  zoo1:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zoo
+    restart: always
+    hostname: zoo1
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      postgres_net:
+        ipv4_address: 172.18.0.7
+  pg-master:
+    build: 'postgres'
+    container_name: pg-master
+    restart: always
+    hostname: pg-master
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: '/var/lib/postgresql/data/pgdata'
+    expose:
+      - 5432
+      - 8008
+    ports:
+      - 5432:5432
+      - 8008:8008
+    volumes:
+     - '/var/lib/postgresql/data'
+    command: patroni /postgres0.yml
+    networks:
+      postgres_net:
+        ipv4_address: 172.18.0.10
+
+  pg-slave-1:
+    build: 'postgres'
+    container_name: pg-slave-1
+    restart: always
+    hostname: pg-slave-1
+    expose:
+      - 5432
+      - 8009
+    ports:
+      - 8009:8009
+    volumes:
+     - '/var/lib/postgresql/data'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: '/var/lib/postgresql/data/pgdata'
+    command: patroni /postgres1.yml
+    networks:
+      postgres_net:
+        ipv4_address: 172.18.0.11
+
+  pg-slave-2:
+    build: 'postgres'
+    container_name: pg-slave-2
+    restart: always
+    hostname: pg-slave-2
+    expose:
+      - 5432
+      - 8010
+    ports:
+      - 8010:8010
+    volumes:
+     - '/var/lib/postgresql/data'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: '/var/lib/postgresql/data/pgdata'
+    command: patroni /postgres2.yml
+    networks:
+      postgres_net:
+        ipv4_address: 172.18.0.12
+  

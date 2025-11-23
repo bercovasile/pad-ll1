@@ -1,0 +1,177 @@
+networks:
+  redis_net:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.15.0.0/16
+
+services:
+  redis-node-1:
+    image: redis:7.2.3
+    command: ["/tmp/redis.sh", "172.15.0.2"]
+    environment:
+      - SUPER_SECRET_PASSWORD=${SUPER_SECRET_PASSWORD}
+    healthcheck:
+      interval: 10s
+      retries: 3
+      test: ["CMD", "redis-cli", "-a", "${SUPER_SECRET_PASSWORD}", "-p", "6379", "ping"]
+    volumes:
+      - redis-node-1-data:/data
+      - ./redis/redis.sh:/tmp/redis.sh:ro
+    networks:
+      redis_net:
+        ipv4_address: 172.15.0.2
+
+  redis-node-2:
+    image: redis:7.2.3
+    command: ["/tmp/redis.sh", "172.15.0.3"]
+    environment:
+      - SUPER_SECRET_PASSWORD=${SUPER_SECRET_PASSWORD}
+    healthcheck:
+      interval: 10s
+      retries: 3
+      test: ["CMD", "redis-cli", "-a", "${SUPER_SECRET_PASSWORD}", "-p", "6379", "ping"]
+    volumes:
+      - redis-node-2-data:/data
+      - ./redis/redis.sh:/tmp/redis.sh:ro
+    networks:
+      redis_net:
+        ipv4_address: 172.15.0.3
+
+  redis-node-3:
+    image: redis:7.2.3
+    command: ["/tmp/redis.sh", "172.15.0.4"]
+    environment:
+      - SUPER_SECRET_PASSWORD=${SUPER_SECRET_PASSWORD}
+    healthcheck:
+      interval: 10s
+      retries: 3
+      test: ["CMD", "redis-cli", "-a", "${SUPER_SECRET_PASSWORD}", "-p", "6379", "ping"]
+    volumes:
+      - ./redis/node3/data:/data
+      - ./redis/redis.sh:/tmp/redis.sh:ro
+    networks:
+      redis_net:
+        ipv4_address: 172.15.0.4
+
+  redis-node-4:
+    image: redis:7.2.3
+    command: ["/tmp/redis.sh", "172.15.0.8"]
+    environment:
+      - SUPER_SECRET_PASSWORD=${SUPER_SECRET_PASSWORD}
+    healthcheck:
+      interval: 10s
+      retries: 3
+      test: ["CMD", "redis-cli", "-a", "${SUPER_SECRET_PASSWORD}", "-p", "6379", "ping"]
+    volumes:
+      - redis-node-4-data:/data
+      - ./redis/redis.sh:/tmp/redis.sh:ro
+    networks:
+      redis_net:
+        ipv4_address: 172.15.0.8
+
+  redis-node-5:
+    image: redis:7.2.3
+    command: ["/tmp/redis.sh", "172.15.0.9"]
+    environment:
+      - SUPER_SECRET_PASSWORD=${SUPER_SECRET_PASSWORD}
+    healthcheck:
+      interval: 10s
+      retries: 3
+      test: ["CMD", "redis-cli", "-a", "${SUPER_SECRET_PASSWORD}", "-p", "6379", "ping"]
+    volumes:
+      - redis-node-5-data:/data
+      - ./redis/redis.sh:/tmp/redis.sh:ro
+    networks:
+      redis_net:
+        ipv4_address: 172.15.0.9
+
+  redis-node-6:
+    image: redis:7.2.3
+    command: ["/tmp/redis.sh", "172.15.0.10"]
+    environment:
+      - SUPER_SECRET_PASSWORD=${SUPER_SECRET_PASSWORD}
+    healthcheck:
+      interval: 10s
+      retries: 3
+      test: ["CMD", "redis-cli", "-a", "${SUPER_SECRET_PASSWORD}", "-p", "6379", "ping"]
+    volumes:
+      - redis-node-6-data:/data
+      - ./redis/redis.sh:/tmp/redis.sh:ro
+    networks:
+      redis_net:
+        ipv4_address: 172.15.0.10
+
+  redis-cluster-creator:
+    image: redis:7.2.3
+    environment:
+      - SUPER_SECRET_PASSWORD=${SUPER_SECRET_PASSWORD}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Waiting for all nodes to be ready..."
+        until redis-cli -a "$$SUPER_SECRET_PASSWORD" -h 172.15.0.2 -p 6379 ping > /dev/null 2>&1; do sleep 1; done
+        until redis-cli -a "$$SUPER_SECRET_PASSWORD" -h 172.15.0.3 -p 6379 ping > /dev/null 2>&1; do sleep 1; done
+        until redis-cli -a "$$SUPER_SECRET_PASSWORD" -h 172.15.0.4 -p 6379 ping > /dev/null 2>&1; do sleep 1; done
+        until redis-cli -a "$$SUPER_SECRET_PASSWORD" -h 172.15.0.8 -p 6379 ping > /dev/null 2>&1; do sleep 1; done
+        until redis-cli -a "$$SUPER_SECRET_PASSWORD" -h 172.15.0.9 -p 6379 ping > /dev/null 2>&1; do sleep 1; done
+        until redis-cli -a "$$SUPER_SECRET_PASSWORD" -h 172.15.0.10 -p 6379 ping > /dev/null 2>&1; do sleep 1; done
+        echo "All nodes ready. Creating cluster with 3 masters and 3 replicas..."
+        redis-cli -a "$$SUPER_SECRET_PASSWORD" --cluster create \
+          172.15.0.2:6379 172.15.0.3:6379 172.15.0.4:6379 \
+          172.15.0.8:6379 172.15.0.9:6379 172.15.0.10:6379 \
+          --cluster-replicas 1 --cluster-yes
+        echo "Cluster created successfully!"
+    depends_on:
+      redis-node-1:
+        condition: service_healthy
+      redis-node-2:
+        condition: service_healthy
+      redis-node-3:
+        condition: service_healthy
+      redis-node-4:
+        condition: service_healthy
+      redis-node-5:
+        condition: service_healthy
+      redis-node-6:
+        condition: service_healthy
+    networks:
+      redis_net:
+        ipv4_address: 172.15.0.5
+
+  redis-insight:
+    container_name: redis-insight
+    image: redislabs/redisinsight:1.14.0
+    depends_on:
+      redis-cluster-creator:
+        condition: service_completed_successfully
+    networks:
+      redis_net:
+        ipv4_address: 172.15.0.6
+
+  redis-proxy:
+    image: haproxytech/haproxy-alpine:2.4
+    volumes:
+    - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - 6379:6379
+      - 8002:8002
+      - 8001:8001
+    depends_on:
+      - redis-node-1
+      - redis-node-2
+      - redis-node-3
+      - redis-node-4
+      - redis-node-5
+      - redis-node-6
+    networks:
+      redis_net:
+        ipv4_address: 172.15.0.7
+
+volumes:
+  redis-node-1-data:
+  redis-node-2-data:
+  redis-node-3-data:
+  redis-node-4-data:
+  redis-node-5-data:
+  redis-node-6-data:
