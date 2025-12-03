@@ -1,0 +1,30 @@
+name: Deploy to Elastic Beanstalk
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1   # your region
+
+      - name: Install EB CLI
+        run: pip install awsebcli
+
+      - name: Deploy to Elastic Beanstalk
+        run: |
+          eb init "${{ secrets.APPLICATION_NAME }}" -r eu-north-1 -p "dotnet-core"
+          eb deploy "${{ secrets.ENVIRONMENT_NAME }}"
