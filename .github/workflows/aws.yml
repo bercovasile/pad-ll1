@@ -26,5 +26,5 @@ jobs:
 
       - name: Deploy to Elastic Beanstalk
         run: |
-          eb init "${{ secrets.APPLICATION_NAME }}" -r eu-north-1 -p "dotnet-core"
+          eb init "${{ secrets.APPLICATION_NAME }}" -r eu-north-1 -p "dotnet-9"
           eb deploy "${{ secrets.ENVIRONMENT_NAME }}"
